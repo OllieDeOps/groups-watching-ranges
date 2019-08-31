@@ -30,8 +30,6 @@ type ParsedCmd struct {
 	groupName  string
 }
 
-var count = 0
-
 func main() {
 	// Listen for incoming connections.
 	l, err := net.Listen(connType, connHost+":"+connPort)
@@ -77,7 +75,7 @@ func handleConnection(c net.Conn) {
 			addRangeToGroup(c, cmdDetails)
 		case "DEL":
 			result := "DELing\n"
-			delRangefromGroup(c, cmdDetails)
+			delRangeFromGroup(c, cmdDetails)
 		case "FIND":
 			result := "FINDing\n"
 			c.Write([]byte(string(result)))
@@ -94,6 +92,31 @@ func handleConnection(c net.Conn) {
 }
 
 func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
+	watchRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
+	//watchRange := []int32{cmdDetails.rangeStart, cmdDetails.rangeEnd
+	if len(groups) == 0 {
+		newGroup := Group{cmdDetails.groupName, watchRange}
+		groups = append(groups, newGroup)
+		fmt.Println("first group ", newGroup)
+	} else {
+		for i, group := range groups {
+			if group.name == cmdDetails.groupName {
+				fmt.Println("matched ", group)
+				joined := append(group.watching, watchRange...)
+				unique := makeUnique(joined)
+				groups[i].watching = unique
+				fmt.Println("updated ", groups[i])
+			} else {
+				newGroup := Group{cmdDetails.groupName, watchRange}
+				groups = append(groups, newGroup)
+				fmt.Println("no match, creating group")
+			}
+		}
+	}
+	c.Write([]byte("OK\n"))
+}
+
+func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	watchRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	//watchRange := []int32{cmdDetails.rangeStart, cmdDetails.rangeEnd
 	if len(groups) == 0 {

@@ -74,7 +74,6 @@ func handleConnection(c net.Conn) {
 		case "ADD":
 			addRangeToGroup(c, cmdDetails)
 		case "DEL":
-			result := "DELing\n"
 			delRangeFromGroup(c, cmdDetails)
 		case "FIND":
 			result := "FINDing\n"
@@ -117,31 +116,20 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 }
 
 func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
-	watchRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
-	//watchRange := []int32{cmdDetails.rangeStart, cmdDetails.rangeEnd
-	if len(groups) == 0 {
-		newGroup := Group{cmdDetails.groupName, watchRange}
-		groups = append(groups, newGroup)
-		fmt.Println("first group ", newGroup)
-	} else {
-		for i, group := range groups {
-			if group.name == cmdDetails.groupName {
-				fmt.Println("matched ", group)
-				joined := append(group.watching, watchRange...)
-				unique := makeUnique(joined)
-				groups[i].watching = unique
-				fmt.Println("updated ", groups[i])
-			} else {
-				newGroup := Group{cmdDetails.groupName, watchRange}
-				groups = append(groups, newGroup)
-				fmt.Println("no match, creating group")
+	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
+	for i, group := range groups {
+		if group.name == cmdDetails.groupName {
+			fmt.Println("matched ", group)
+			for j := 0; j < len(groups[i].watching); j++ {
+				for _, d := range delRange {
+					fmt.Println(d)
+				}
 			}
+		} else {
+			fmt.Println("ERROR: no such group name")
 		}
 	}
-	count++
-	num := strconv.Itoa(count)
-	result := "adding " + num + "\n"
-	c.Write([]byte(result))
+	c.Write([]byte("OK\n"))
 }
 
 func makeRange(min, max int32) []int32 {

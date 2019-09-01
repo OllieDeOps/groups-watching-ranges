@@ -32,12 +32,6 @@ type ParsedCmd struct {
 }
 
 func main() {
-
-	newGroup := Group{"me", []int32{1, 4}}
-	groups = append(groups, newGroup)
-	newGroup2 := Group{"yo", []int32{1, 4}}
-	groups = append(groups, newGroup2)
-	fmt.Println(groups)
 	// Listen for incoming connections.
 	l, err := net.Listen(connType, connHost+":"+connPort)
 	if err != nil {
@@ -169,8 +163,6 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 					}
 				}
 			}
-		} else {
-			c.Write([]byte("ERROR: no such group name\n"))
 		}
 	}
 	c.Write([]byte("OK\n"))
@@ -179,15 +171,15 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 // HMMM
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
-	for i, group := range groups {
-		for j := 0; j < len(group.watching); j++ {
-			for _, del := range delRange {
-				if del == groups[i].watching[j] {
-					groups[i].watching = remove(groups[i].watching, j)
-				}
+	for i := range groups {
+		fmt.Println(groups[i])
+		for j := range groups[i].watching {
+			fmt.Println(groups[i].watching[j])
+			for d := range delRange {
+				fmt.Println(delRange[d])
 			}
 		}
-		fmt.Println(group.watching)
+		fmt.Println(groups[i].watching)
 	}
 }
 

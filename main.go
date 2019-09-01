@@ -121,10 +121,15 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 		if group.name == cmdDetails.groupName {
 			fmt.Println("matched ", group)
 			for j := 0; j < len(groups[i].watching); j++ {
-				for _, d := range delRange {
-					fmt.Println(d)
+				for _, del := range delRange {
+					if del == groups[i].watching[j] {
+						fmt.Println(groups[i].watching[j])
+						groups[i].watching = remove(groups[i].watching, j)
+					}
 				}
 			}
+			fmt.Println("delRange: ", delRange)
+			fmt.Println("processed: ", groups[i])
 		} else {
 			fmt.Println("ERROR: no such group name")
 		}
@@ -151,3 +156,11 @@ func makeUnique(intSlice []int32) []int32 {
 	}
 	return list
 }
+func remove(s []int32, i int) []int32 {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+// func remove(slice []int32, s int32) []int32 {
+// 	return append(slice[:s], slice[s+1:]...)
+// }

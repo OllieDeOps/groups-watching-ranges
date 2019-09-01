@@ -129,13 +129,13 @@ func handleConnection(c net.Conn) {
 func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 	notMatching := make([]Group, 0)
 	watchRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
-	//watchRange := []int32{cmdDetails.rangeStart, cmdDetails.rangeEnd
 	if len(groups) == 0 {
 		newGroup := Group{cmdDetails.groupName, watchRange}
 		groups = append(groups, newGroup)
 	} else {
 		for i := range groups {
 			if groups[i].name == cmdDetails.groupName {
+				fmt.Println("matched")
 				joined := append(groups[i].watching, watchRange...)
 				unique := makeUnique(joined)
 				sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
@@ -144,7 +144,6 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 				notMatching = append(notMatching, groups[i])
 			}
 		}
-		fmt.Println("notMatching: ", notMatching)
 
 		newGroup := Group{cmdDetails.groupName, watchRange}
 		groups = append(notMatching, newGroup)
@@ -168,19 +167,21 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	c.Write([]byte("OK\n"))
 }
 
-// HMMM
+// Hmmm... perhaps combine the delete funcs
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i := range groups {
-		fmt.Println(groups[i])
-		for j := range groups[i].watching {
-			fmt.Println(groups[i].watching[j])
-			for d := range delRange {
-				fmt.Println(delRange[d])
+		for j := 0; j < len(groups[i].watching); j++ {
+			for d, del := range delRange {
+				if del == groups[i].watching[j] {
+					fmt.Println("del at: ", groups[i], groups[i].watching[j])
+					fmt.Println("i of d: ", d)
+					groups[i].watching = remove(groups[i].watching, j)
+				}
 			}
 		}
-		fmt.Println(groups[i].watching)
 	}
+	c.Write([]byte("OK\n"))
 }
 
 func makeRange(min, max int32) []int32 {

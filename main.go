@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -103,6 +104,7 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 				fmt.Println("matched ", group)
 				joined := append(group.watching, watchRange...)
 				unique := makeUnique(joined)
+				sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
 				groups[i].watching = unique
 				fmt.Println("updated ", groups[i])
 			} else {
@@ -156,11 +158,15 @@ func makeUnique(intSlice []int32) []int32 {
 	}
 	return list
 }
-func remove(s []int32, i int) []int32 {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
-}
 
-// func remove(slice []int32, s int32) []int32 {
-// 	return append(slice[:s], slice[s+1:]...)
+// func remove(s []int32, i int) []int32 {
+// 	s[i] = s[len(s)-1]
+// 	return s[:len(s)-1]
 // }
+
+// less efficient.
+func remove(slice []int32, s int) []int32 {
+	apdWatch := append(slice[:s], slice[s+1:]...)
+	sort.Slice(apdWatch, func(i, j int) bool { return apdWatch[i] < apdWatch[j] })
+	return apdWatch
+}

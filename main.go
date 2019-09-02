@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -74,11 +73,13 @@ func handleConnection(c net.Conn) {
 			cmdDetails := ParsedCmd{rangeStart32, rangeEnd32, cmd[3]}
 			switch cmd[0] {
 			case "ADD":
+				fmt.Println("adding range...")
 				addRangeToGroup(c, cmdDetails)
-				fmt.Println(groups)
+				fmt.Println("done")
 			case "DEL":
+				fmt.Println("deleting range...")
 				delRangeFromGroup(c, cmdDetails)
-				fmt.Println(groups)
+				fmt.Println("done")
 			default:
 				result := "ERROR: invalid cmd\n"
 				c.Write([]byte(string(result)))
@@ -87,8 +88,9 @@ func handleConnection(c net.Conn) {
 			cmdDetails := ParsedCmd{rangeStart: rangeStart32, rangeEnd: rangeEnd32}
 			switch cmd[0] {
 			case "DEL":
+				fmt.Println("deleting range...")
 				delRangeFromAllGroups(c, cmdDetails)
-				fmt.Println(groups)
+				fmt.Println("done")
 			case "FIND":
 				// findRangeForAllGroups(c, cmdDetails)
 				result := "FINDing\n"
@@ -123,7 +125,6 @@ func handleConnection(c net.Conn) {
 		}
 
 	}
-	// c.Close()
 }
 
 func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
@@ -137,7 +138,7 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 			if groups[i].name == cmdDetails.groupName {
 				joined := append(groups[i].watching, watchRange...)
 				unique := makeUnique(joined)
-				sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
+				//sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
 				groups[i].watching = unique
 				c.Write([]byte("OK\n"))
 				return
@@ -146,21 +147,20 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 				notMatching = append(notMatching, groups[i])
 			}
 		}
-
-		fmt.Println("notMatching: ", notMatching)
 		newGroup := Group{cmdDetails.groupName, watchRange}
 		groups = append(notMatching, newGroup)
 	}
 	c.Write([]byte("OK\n"))
 }
 
+// Hmmm... perhaps combine the delete functions
 func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i, group := range groups {
 		if group.name == cmdDetails.groupName {
-			for j := 0; j < len(groups[i].watching); j++ {
-				for _, del := range delRange {
-					if del == groups[i].watching[j] {
+			for d := range delRange {
+				for j := 0; j < len(groups[i].watching); j++ {
+					if delRange[d] == groups[i].watching[j] {
 						groups[i].watching = remove(groups[i].watching, j)
 					}
 				}
@@ -170,44 +170,18 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	c.Write([]byte("OK\n"))
 }
 
-// Hmmm... perhaps combine the delete funcs
+// Hmmm... perhaps combine the delete functions
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i := range groups {
 		for d := range delRange {
 			for j := 0; j < len(groups[i].watching); j++ {
 				if delRange[d] == groups[i].watching[j] {
-
-					fmt.Println("delRange[d]: ", delRange[d])
-					fmt.Println("j: ", j)
-					//fmt.Println("groups[i].watching[d]: ", groups[i].watching[d])
-					//if d < len(groups[i].watching) {
-					fmt.Println("groups[i].watching: ", groups[i].watching)
 					groups[i].watching = remove(groups[i].watching, j)
-					//}
 				}
 			}
 		}
 	}
-	// for i := range groups {
-	// 	for j := 0; j < len(groups[i].watching)-1; j++ {
-	// 		for _, del := range delRange {
-	// 			if del == groups[i].watching[j] {
-
-	// 				fmt.Println("del: ", del)
-	// 				fmt.Println("j: ", j)
-	// 				//fmt.Println("groups[i].watching[d]: ", groups[i].watching[d])
-	// 				//if d < len(groups[i].watching) {
-	// 				fmt.Println("groups[i].watching: ", groups[i].watching)
-	// 				groups[i].watching = remove(groups[i].watching, j)
-	// 				//}
-	// 			} else {
-	// 				fmt.Println("d != j")
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	c.Write([]byte("OK\n"))
 }
 
@@ -218,6 +192,12 @@ func makeRange(min, max int32) []int32 {
 	}
 	return numSlice
 }
+
+// func parseRange(wRange []int32) []int32 {
+// 	for i := range wRange {
+// 		if i+1 !=
+// 	}
+// }
 
 func makeIntRange(min, max int32) []int {
 	numSlice := make([]int, max-min+1)
@@ -241,7 +221,7 @@ func makeUnique(intSlice []int32) []int32 {
 
 func remove(s []int32, j int) []int32 {
 	s[j] = s[len(s)-1]
-	sort.Slice(s, func(i, l int) bool { return s[i] < s[l] })
+	//sort.Slice(s, func(i, l int) bool { return s[i] < s[l] })
 	return s[:len(s)-1]
 }
 

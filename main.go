@@ -135,16 +135,24 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 	} else {
 		for i := range groups {
 			if groups[i].name == cmdDetails.groupName {
-				fmt.Println("matched")
+				fmt.Println("match")
 				joined := append(groups[i].watching, watchRange...)
+				fmt.Println("joined: ", joined)
 				unique := makeUnique(joined)
+				fmt.Println("unique: ", unique)
 				sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
 				groups[i].watching = unique
-			} else {
+				fmt.Println("updated groups[i]: ", groups[i])
+				c.Write([]byte("OK\n"))
+				return
+			}
+			if groups[i].name != cmdDetails.groupName {
+				fmt.Println("no match")
 				notMatching = append(notMatching, groups[i])
 			}
 		}
 
+		fmt.Println("notMatching: ", notMatching)
 		newGroup := Group{cmdDetails.groupName, watchRange}
 		groups = append(notMatching, newGroup)
 	}

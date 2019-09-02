@@ -143,7 +143,6 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 				return
 			}
 			if groups[i].name != cmdDetails.groupName {
-				fmt.Println("no match")
 				notMatching = append(notMatching, groups[i])
 			}
 		}
@@ -175,18 +174,40 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i := range groups {
-		fmt.Println("groups[i]: ", groups[i])
-		for j := 0; j < len(groups[i].watching); j++ {
-			fmt.Println("groups[i].watching: ", groups[i].watching)
-			for _, del := range delRange {
-				if del == groups[i].watching[j] {
-					// fmt.Println("del at: ", groups[i], groups[i].watching[j])
-					// fmt.Println("i of d: ", d)
+		for d := range delRange {
+			for j := 0; j < len(groups[i].watching); j++ {
+				if delRange[d] == groups[i].watching[j] {
+
+					fmt.Println("delRange[d]: ", delRange[d])
+					fmt.Println("j: ", j)
+					//fmt.Println("groups[i].watching[d]: ", groups[i].watching[d])
+					//if d < len(groups[i].watching) {
+					fmt.Println("groups[i].watching: ", groups[i].watching)
 					groups[i].watching = remove(groups[i].watching, j)
+					//}
 				}
 			}
 		}
 	}
+	// for i := range groups {
+	// 	for j := 0; j < len(groups[i].watching)-1; j++ {
+	// 		for _, del := range delRange {
+	// 			if del == groups[i].watching[j] {
+
+	// 				fmt.Println("del: ", del)
+	// 				fmt.Println("j: ", j)
+	// 				//fmt.Println("groups[i].watching[d]: ", groups[i].watching[d])
+	// 				//if d < len(groups[i].watching) {
+	// 				fmt.Println("groups[i].watching: ", groups[i].watching)
+	// 				groups[i].watching = remove(groups[i].watching, j)
+	// 				//}
+	// 			} else {
+	// 				fmt.Println("d != j")
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	c.Write([]byte("OK\n"))
 }
 
@@ -194,6 +215,14 @@ func makeRange(min, max int32) []int32 {
 	numSlice := make([]int32, max-min+1)
 	for i := range numSlice {
 		numSlice[i] = min + int32(i)
+	}
+	return numSlice
+}
+
+func makeIntRange(min, max int32) []int {
+	numSlice := make([]int, max-min+1)
+	for i := range numSlice {
+		numSlice[i] = int(min) + int(i)
 	}
 	return numSlice
 }
@@ -210,14 +239,14 @@ func makeUnique(intSlice []int32) []int32 {
 	return list
 }
 
-func remove(s []int32, i int) []int32 {
-	s[i] = s[len(s)-1]
-	sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
+func remove(s []int32, j int) []int32 {
+	s[j] = s[len(s)-1]
+	sort.Slice(s, func(i, l int) bool { return s[i] < s[l] })
 	return s[:len(s)-1]
 }
 
 // less efficient due to shifting all elements of array for each append.
-// func remove(slice []int32, s int) []int32 {
+// func slowRemove(slice []int32, s int) []int32 {
 // 	apdWatch := append(slice[:s], slice[s+1:]...)
 // 	sort.Slice(apdWatch, func(i, j int) bool { return apdWatch[i] < apdWatch[j] })
 // 	return apdWatch

@@ -135,14 +135,10 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 	} else {
 		for i := range groups {
 			if groups[i].name == cmdDetails.groupName {
-				fmt.Println("match")
 				joined := append(groups[i].watching, watchRange...)
-				fmt.Println("joined: ", joined)
 				unique := makeUnique(joined)
-				fmt.Println("unique: ", unique)
 				sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
 				groups[i].watching = unique
-				fmt.Println("updated groups[i]: ", groups[i])
 				c.Write([]byte("OK\n"))
 				return
 			}
@@ -179,11 +175,13 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i := range groups {
+		fmt.Println("groups[i]: ", groups[i])
 		for j := 0; j < len(groups[i].watching); j++ {
-			for d, del := range delRange {
+			fmt.Println("groups[i].watching: ", groups[i].watching)
+			for _, del := range delRange {
 				if del == groups[i].watching[j] {
-					fmt.Println("del at: ", groups[i], groups[i].watching[j])
-					fmt.Println("i of d: ", d)
+					// fmt.Println("del at: ", groups[i], groups[i].watching[j])
+					// fmt.Println("i of d: ", d)
 					groups[i].watching = remove(groups[i].watching, j)
 				}
 			}

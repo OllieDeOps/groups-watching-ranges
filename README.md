@@ -5,7 +5,7 @@
 ```shell
 go run main.go
 ```
-## open a new terminal window in the same folder and run:
+## to easily send commands to the server, open a new terminal window in the same folder and run:
 ```shell
 go run client.go
 ```

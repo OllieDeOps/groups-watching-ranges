@@ -56,18 +56,19 @@ func main() {
 func handleConnection(c net.Conn) {
 	fmt.Printf("Serving %s\n", c.RemoteAddr().String())
 	for {
-		// Our recieved string.
+		// Our recieved data as a string.
 		netData, err := bufio.NewReader(c).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		// Break up command data into slice
 		cmd := strings.Fields(string(netData))
-		rangeStartIsNumber := true
-		rangeEndIsNumber := true
 
 		// Check validity of command data
+		rangeStartIsNumber := true
+		rangeEndIsNumber := true
 		if len(cmd) == 0 || len(cmd) > 4 {
 			c.Write([]byte(string("ERROR: invalid command\n")))
 		} else {
@@ -97,7 +98,7 @@ func handleConnection(c net.Conn) {
 				}
 				if rangeStartIsNumber == false || rangeEndIsNumber == false || checkRangeStart < 0 || checkRangeStart > 4294967295 || checkRangeEnd < 0 || checkRangeEnd > 4294967295 {
 					if rangeStartIsNumber == false || rangeEndIsNumber == false {
-						c.Write([]byte(string("ERROR: arg given for range must be a number\n")))
+						c.Write([]byte(string("ERROR: args given for range must be a number\n")))
 					} else {
 						c.Write([]byte(string("ERROR: given value out of range\n")))
 					}
@@ -113,7 +114,7 @@ func handleConnection(c net.Conn) {
 						case "ADD":
 							fmt.Println("adding range...")
 							addRangeToGroup(c, cmdDetails)
-							fmt.Println(groups)
+							fmt.Println("done")
 						case "DEL":
 							fmt.Println("deleting range...")
 							delRangeFromGroup(c, cmdDetails)

@@ -65,7 +65,6 @@ func handleConnection(c net.Conn) {
 
 		// Break up command data into slice
 		cmd := strings.Fields(string(netData))
-
 		// Check validity of command data
 		rangeStartIsNumber := true
 		rangeEndIsNumber := true

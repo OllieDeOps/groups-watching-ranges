@@ -14,17 +14,16 @@ const (
 )
 
 func main() {
-
-	// connect to this socket
+	// Connect to this socket
 	conn, _ := net.Dial(connType, connHost+":"+connPort)
 	for {
-		// read in input from stdin
+		// Read in input from stdin
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("-> ")
 		text, _ := reader.ReadString('\n')
-		// send to socket
+		// Send to socket
 		fmt.Fprintf(conn, text)
-		// listen for reply
+		// Listen for reply
 		message, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print(message)
 		if message == "Disconnecting\n" {

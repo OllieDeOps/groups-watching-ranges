@@ -128,17 +128,15 @@ func handleConnection(c net.Conn) {
 					if cmd[0] == "ADD" && len(cmd) == 4 {
 						fmt.Println("adding range...")
 						addRangeToGroup(c, cmdDetails)
-						fmt.Println("added")
+						fmt.Println("done")
 					} else if cmd[0] == "DEL" {
 						fmt.Println("deleting range...")
 						delRange(c, cmdDetails)
-						fmt.Println("deleted")
+						fmt.Println("done")
 					} else if cmd[0] == "FIND" {
 						fmt.Println("finding groups...")
 						findWatchingGroups(c, cmdDetails)
-						fmt.Println("success")
-					} else {
-						c.Write([]byte("ERROR: invalid command\n"))
+						fmt.Println("done")
 					}
 				}
 			} else {
@@ -174,7 +172,6 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 }
 
 func delRange(c net.Conn, cmdDetails ParsedCmd) {
-	fmt.Println(cmdDetails)
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	if cmdDetails.groupName != "" {
 		for i, group := range groups {

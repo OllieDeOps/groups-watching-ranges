@@ -101,7 +101,7 @@ func handleConnection(c net.Conn) {
 					} else {
 						c.Write([]byte(string("ERROR: given value out of range\n")))
 					}
-				} else if len(cmd) > 2 && checkRangeStart > checkRangeEnd {
+				} else if checkRangeStart > checkRangeEnd {
 					c.Write([]byte(string("ERROR: first value argument must be a number smaller than the second\n")))
 				} else {
 					// Route command args to proper function
@@ -128,15 +128,15 @@ func handleConnection(c net.Conn) {
 					if cmd[0] == "ADD" && len(cmd) == 4 {
 						fmt.Println("adding range...")
 						addRangeToGroup(c, cmdDetails)
-						fmt.Println("added")
+						fmt.Println(groups)
 					} else if cmd[0] == "DEL" {
 						fmt.Println("deleting range...")
 						delRange(c, cmdDetails)
-						fmt.Println("deleted")
+						fmt.Println(groups)
 					} else if cmd[0] == "FIND" {
 						fmt.Println("finding groups...")
 						findWatchingGroups(c, cmdDetails)
-						fmt.Println("success")
+						fmt.Println(groups)
 					} else {
 						c.Write([]byte("ERROR: invalid command\n"))
 					}

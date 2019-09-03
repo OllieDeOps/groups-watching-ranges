@@ -24,11 +24,11 @@ func main() {
 		text, _ := reader.ReadString('\n')
 		// send to socket
 		fmt.Fprintf(conn, text)
-		if text == "STOP\n" {
-			os.Exit(1)
-		}
 		// listen for reply
 		message, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print(message)
+		if message == "Disconnecting\n" {
+			os.Exit(1)
+		}
 	}
 }

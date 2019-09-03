@@ -15,7 +15,7 @@ const (
 	connType = "tcp"
 )
 
-// Group defines the watcher
+// Group watches numbers
 type Group struct {
 	name     string
 	watching []uint32
@@ -62,71 +62,104 @@ func handleConnection(c net.Conn) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		// Parse cmd ints
+		// Break up command data into slice
 		cmd := strings.Fields(string(netData))
-		fmt.Println(cmd)
-		rangeStart64, _ := strconv.ParseInt(cmd[1], 10, 64)
-		rangeStart32 := uint32(rangeStart64)
-		// If group name is provided
-		if len(cmd) == 4 {
-			rangeEnd64, _ := strconv.ParseInt(cmd[2], 10, 64)
-			rangeEnd32 := uint32(rangeEnd64)
-			cmdDetails := ParsedCmd{rangeStart32, rangeEnd32, cmd[3]}
-			switch cmd[0] {
-			case "ADD":
-				fmt.Println("adding range...")
-				addRangeToGroup(c, cmdDetails)
-				fmt.Println("done")
-			case "DEL":
-				fmt.Println("deleting range...")
-				delRangeFromGroup(c, cmdDetails)
-				fmt.Println("done")
-			default:
-				result := "ERROR: invalid cmd\n"
-				c.Write([]byte(string(result)))
-			}
-		} else if len(cmd) == 3 {
-			rangeEnd64, _ := strconv.ParseInt(cmd[2], 10, 64)
-			rangeEnd32 := uint32(rangeEnd64)
-			cmdDetails := ParsedCmd{rangeStart: rangeStart32, rangeEnd: rangeEnd32}
-			switch cmd[0] {
-			case "DEL":
-				fmt.Println("deleting range...")
-				delRangeFromAllGroups(c, cmdDetails)
-				fmt.Println("done")
-			case "FIND":
-				fmt.Println("finding groups...")
-				findRangeForAllGroups(c, cmdDetails)
-				fmt.Println("done")
-			default:
-				result := "ERROR: invalid cmd\n"
-				c.Write([]byte(string(result)))
-			}
-		} else if len(cmd) == 2 {
-			cmdDetails := ParsedCmd{rangeStart: rangeStart32}
-			switch cmd[0] {
-			case "FIND":
-				fmt.Println("finding groups...")
-				findValueForAllGroups(c, cmdDetails)
-				fmt.Println("done")
-			case "STOP":
+		rangeStartIsNumber := true
+		rangeEndIsNumber := true
+
+		// Check validity of command data
+		if len(cmd) == 0 || len(cmd) > 4 {
+			c.Write([]byte(string("ERROR: invalid command\n")))
+		} else {
+			if cmd[0] == "STOP" {
 				fmt.Printf("Stopped Serving %s\n", c.RemoteAddr().String())
+				c.Write([]byte(string("Disconnecting\n")))
 				break
-			default:
-				result := "ERROR: invalid cmd\n"
-				c.Write([]byte(string(result)))
 			}
-		} else if len(cmd) == 1 {
-			switch cmd[0] {
-			case "STOP":
-				fmt.Printf("Stopped Serving %s\n", c.RemoteAddr().String())
-				break
-			default:
-				result := "ERROR: invalid cmd\n"
-				c.Write([]byte(string(result)))
+			if cmd[0] == "ADD" || cmd[0] == "DEL" || cmd[0] == "FIND" {
+				var rangeStart uint32
+				var rangeEnd uint32
+				var checkRangeEnd int64
+				var checkRangeStart int64
+				if len(cmd) > 1 {
+					if _, err := strconv.Atoi(cmd[1]); err == nil {
+						checkRangeStart, _ = strconv.ParseInt(cmd[1], 10, 64)
+					} else {
+						rangeStartIsNumber = false
+					}
+				}
+				if len(cmd) > 2 {
+					if _, err := strconv.Atoi(cmd[2]); err == nil {
+						checkRangeEnd, _ = strconv.ParseInt(cmd[2], 10, 64)
+					} else {
+						rangeEndIsNumber = false
+					}
+				}
+				if rangeStartIsNumber == false || rangeEndIsNumber == false || checkRangeStart < 0 || checkRangeStart > 4294967295 || checkRangeEnd < 0 || checkRangeEnd > 4294967295 {
+					if rangeStartIsNumber == false || rangeEndIsNumber == false {
+						c.Write([]byte(string("ERROR: arg given for range must be a number\n")))
+					} else {
+						c.Write([]byte(string("ERROR: given value out of range\n")))
+					}
+				} else {
+					// Route command to proper function
+					if len(cmd) == 4 {
+						rangeStart64, _ := strconv.ParseInt(cmd[1], 10, 64)
+						rangeEnd64, _ := strconv.ParseInt(cmd[2], 10, 64)
+						rangeStart = uint32(rangeStart64)
+						rangeEnd = uint32(rangeEnd64)
+						cmdDetails := ParsedCmd{rangeStart, rangeEnd, cmd[3]}
+						switch cmd[0] {
+						case "ADD":
+							fmt.Println("adding range...")
+							addRangeToGroup(c, cmdDetails)
+							fmt.Println(groups)
+						case "DEL":
+							fmt.Println("deleting range...")
+							delRangeFromGroup(c, cmdDetails)
+							fmt.Println("done")
+						default:
+							result := "ERROR: invalid cmd\n"
+							c.Write([]byte(string(result)))
+						}
+					} else if len(cmd) == 3 {
+						rangeStart64, _ := strconv.ParseInt(cmd[1], 10, 64)
+						rangeEnd64, _ := strconv.ParseInt(cmd[2], 10, 64)
+						rangeStart = uint32(rangeStart64)
+						rangeEnd = uint32(rangeEnd64)
+						cmdDetails := ParsedCmd{rangeStart: rangeStart, rangeEnd: rangeEnd}
+						switch cmd[0] {
+						case "DEL":
+							fmt.Println("deleting range...")
+							delRangeFromAllGroups(c, cmdDetails)
+							fmt.Println("done")
+						case "FIND":
+							fmt.Println("finding groups...")
+							findRangeForAllGroups(c, cmdDetails)
+							fmt.Println("done")
+						default:
+							result := "ERROR: invalid cmd\n"
+							c.Write([]byte(string(result)))
+						}
+					} else if len(cmd) == 2 {
+						rangeStart64, _ := strconv.ParseInt(cmd[1], 10, 64)
+						rangeStart = uint32(rangeStart64)
+						cmdDetails := ParsedCmd{rangeStart: rangeStart}
+						switch cmd[0] {
+						case "FIND":
+							fmt.Println("finding groups...")
+							findValueForAllGroups(c, cmdDetails)
+							fmt.Println("done")
+						default:
+							result := "ERROR: invalid cmd\n"
+							c.Write([]byte(string(result)))
+						}
+					}
+				}
+			} else {
+				c.Write([]byte(string("ERROR: invalid command\n")))
 			}
 		}
-
 	}
 }
 
@@ -140,8 +173,7 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 		for i := range groups {
 			if groups[i].name == cmdDetails.groupName {
 				joined := append(groups[i].watching, watchRange...)
-				unique := makeUnique(joined)
-				//sort.Slice(unique, func(i, j int) bool { return unique[i] < unique[j] })
+				unique := makeIntsUnique(joined)
 				groups[i].watching = unique
 				c.Write([]byte("OK\n"))
 				return
@@ -156,7 +188,6 @@ func addRangeToGroup(c net.Conn, cmdDetails ParsedCmd) {
 	c.Write([]byte("OK\n"))
 }
 
-// Hmmm... perhaps combine the delete functions
 func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i, group := range groups {
@@ -173,7 +204,6 @@ func delRangeFromGroup(c net.Conn, cmdDetails ParsedCmd) {
 	c.Write([]byte("OK\n"))
 }
 
-// Hmmm... perhaps combine the delete functions
 func delRangeFromAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 	delRange := makeRange(cmdDetails.rangeStart, cmdDetails.rangeEnd)
 	for i := range groups {
@@ -202,9 +232,12 @@ func findRangeForAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 			}
 		}
 	}
-
-	stringsToBytes := "\x00" + strings.Join(foundGroups, "\x20\x00")
-	c.Write([]byte(stringsToBytes + "\n"))
+	if len(foundGroups) > 0 {
+		stringsToBytes := "\x00" + strings.Join(foundGroups, "\x20\x00")
+		c.Write([]byte(stringsToBytes + "\n"))
+	} else {
+		c.Write([]byte("ERROR: no results\n"))
+	}
 }
 
 func findValueForAllGroups(c net.Conn, cmdDetails ParsedCmd) {
@@ -218,9 +251,12 @@ func findValueForAllGroups(c net.Conn, cmdDetails ParsedCmd) {
 			}
 		}
 	}
-
-	stringsToBytes := "\x00" + strings.Join(foundGroups, "\x20\x00")
-	c.Write([]byte(stringsToBytes + "\n"))
+	if len(foundGroups) > 0 {
+		stringsToBytes := "\x00" + strings.Join(foundGroups, "\x20\x00")
+		c.Write([]byte(stringsToBytes + "\n"))
+	} else {
+		c.Write([]byte("ERROR: no results\n"))
+	}
 }
 
 func makeRange(min, max uint32) []uint32 {
@@ -231,21 +267,7 @@ func makeRange(min, max uint32) []uint32 {
 	return numSlice
 }
 
-// func parseRange(wRange []uint32) []uint32 {
-// 	for i := range wRange {
-// 		if i+1 !=
-// 	}
-// }
-
-func makeIntRange(min, max uint32) []int {
-	numSlice := make([]int, max-min+1)
-	for i := range numSlice {
-		numSlice[i] = int(min) + int(i)
-	}
-	return numSlice
-}
-
-func makeUnique(intSlice []uint32) []uint32 {
+func makeIntsUnique(intSlice []uint32) []uint32 {
 	keys := make(map[uint32]bool)
 	list := []uint32{}
 	for _, entry := range intSlice {
@@ -271,13 +293,5 @@ func makeStringsUnique(stringSlice []string) []string {
 
 func remove(s []uint32, j int) []uint32 {
 	s[j] = s[len(s)-1]
-	//sort.Slice(s, func(i, l int) bool { return s[i] < s[l] })
 	return s[:len(s)-1]
 }
-
-// less efficient due to shifting all elements of array for each append.
-// func slowRemove(slice []uint32, s int) []uint32 {
-// 	apdWatch := append(slice[:s], slice[s+1:]...)
-// 	sort.Slice(apdWatch, func(i, j int) bool { return apdWatch[i] < apdWatch[j] })
-// 	return apdWatch
-// }

@@ -1,4 +1,4 @@
-# nks-homework
+# Groups Watching Ranges
 
 #### prerequisites: golang installed
 ### clone the repo, open a terminal window, cd into the project folder and run:
